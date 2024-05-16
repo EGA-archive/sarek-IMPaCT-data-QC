@@ -1,0 +1,192 @@
+# IMPACT QC - MULTIQC CONFIG FILE
+
+# Run only these modules
+run_modules:
+  #- custom_content 
+  - fastqc
+  - fastp
+  - picard
+  - samtools
+  - mosdepth
+  - gatk
+  - sexdeterrmine
+  - somalier
+  - fastq_screen
+  - bcftools
+  - vcftools
+  - custom_content 
+  - snpeff
+  - vep
+
+# Module order (change group names)
+module_order:
+  - fastqc:
+      name: "FastQC (raw)"
+      path_filters_exclude:
+        - "*_val_*.zip"
+  - fastp:
+      name: "FastP (Read preprocessing)"
+  - fastq_screen:
+      name: "FastQ Screen"
+  - picard:
+      name: "GATK-PICARD tools"
+      info: "Metrics generated either by GATK4 MarkDuplicates or EstimateLibraryComplexity (with --use_gatk_spark), GATK4 CollectInsertSizeMetrics and CollectHsMetrics."
+  - samtools:
+      name: "Samtools Flagstat"
+  - mosdepth:
+      name: "Mosdepth"
+  - gatk:
+      name: "GATK4 BQSR"
+  - sexdeterrmine:
+      name: "Sex.DetERRmine"
+  - somalier:
+      name: "Somalier"
+  - bcftools:
+      name: "Bcftools"
+  - vcftools:
+      name: "Vcftools"
+  - snpeff:
+      name: "SNPeff"
+  - vep:
+      name: "VEP"
+
+# Mosdepth show which coverage thresholds
+mosdepth_config:
+  general_stats_coverage:
+    - 1 
+    - 10
+    - 20
+    - 30
+    - 100
+
+# Fastq screen
+fastqscreen_simpleplot: true
+
+# General statistics table visible columns
+table_columns_visible:
+  FastQC (raw):
+    percent_duplicates: True
+    percent_gc: True
+    avg_sequence_length: True 
+    median_sequence_length: True
+    percent_fails: False
+    total_sequences: True
+  FastP (Read preprocessing):
+    pct_duplication: False
+    after_filtering_q30_rate: False
+    after_filtering_q30_bases: False
+    after_filtering_gc_content: True
+    filtering_result_passed_filter_reads: False
+    pct_surviving: False
+  Samtools Flagstat:
+    error_rate: True
+    non-primary_alignments: False
+    reads_mapped: True
+    reads_mapped_percent: True  
+    reads_properly_paired_percent: True
+    reads_MQ0_percent: False
+    raw_total_sequences: False
+    flagstat_total: True
+    mapped_passed: False
+    mapped_passed_pct: False
+  mosdepth:
+    1_x_pc: True
+    8_x_pc: True
+    10_x_pc: True
+    20_x_pc: True
+    30_x_pc: True
+    100_x_pc: True
+    median_coverage: True
+  Sex.DetERRmine:
+    RateErrX: False
+    RateErrY: False
+    RateX: True
+    RateY: True
+  bcftools/stats:
+    number_of_records: True
+    number_of_SNPs: True
+    number_of_indels: True
+    tstv: True
+    number_of_MNPs: False
+    variations_hom: True
+    variations_het: True
+
+# General statistics table picard columns conf
+picard_config:
+  HsMetrics_genstats_table_cols:
+    - FOLD_ENRICHMENT
+  HsMetrics_genstats_table_cols_hidden:
+    - MEDIAN_TARGET_COVERAGE
+    - PCT_TARGET_BASES_30X
+  insertsize_genstats_table_cols:
+    - summed_median
+    - summed_mean
+  markdups_genstats_table_cols:
+    - PERCENT_DUPLICATION
+
+# General statistics table placement
+table_columns_placement:
+  FastQC (raw):
+    percent_duplicates: 990
+    percent_gc: 990
+    avg_sequence_length: 990 
+    median_sequence_length: 990
+    percent_fails: 990
+    total_sequences: 990
+  FastP (Read preprocessing):
+    pct_duplication: 1000
+    after_filtering_q30_rate: 1000
+    after_filtering_q30_bases: 1000
+    filtering_result_passed_filter_reads: 1000
+    pct_surviving: 1000
+    after_filtering_gc_content: 1000
+  Samtools Flagstat:
+    error_rate: 1017
+    non-primary_alignments: 1017
+    reads_mapped: 1017
+    reads_mapped_percent: 1017  
+    reads_properly_paired_percent: 1017
+    reads_MQ0_percent: 1017
+    raw_total_sequences: 1017
+    flagstat_total: 1017
+    mapped_passed: 1017
+    mapped_passed_pct: 1017
+  mosdepth:
+    1_x_pc: 1009
+    8_x_pc: 1010
+    10_x_pc: 1011
+    20_x_pc: 1012
+    30_x_pc: 1013
+    100_x_pc: 1014
+    median_coverage: 1015
+  Sex.DetERRmine:
+    RateErrX: 1025
+    RateErrY: 1025
+    RateX: 1026
+    RateY: 1026
+  bcftools:
+    number_of_records: 1040
+    number_of_SNPs: 1041
+    number_of_indels: 1042
+    tstv: 1050
+    number_of_MNPs: 1060
+    variations_hom: 1045
+    variations_het: 1045
+  Custom content/fastp_stats:
+    N_SEQ_BASES_BEFORE: 1001
+    N_SEQ_BASES_AFTER: 1002
+    N_SEQ_BASES_Q30_BEFORE: 1003
+    N_SEQ_BASES_Q30_AFTER: 1004
+    N_READS_BEFORE: 1005
+    N_READS_AFTER: 1006
+    PCT_PASSED_READS: 1007
+    PCT_FILTERED_READS: 1008
+  Custom content:
+    RATIO_HET-HOM: 1080
+    N_MULTIALLELIC_VARIANTS: 1081
+    N_MULTIALLELIC_SNP_VARIANTS: 1082
+
+custom_content:
+  order:
+    - fastp_stats
+    - bcftools_stats

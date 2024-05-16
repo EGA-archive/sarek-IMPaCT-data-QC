@@ -1,0 +1,47 @@
+name: bcftoolscustom
+description: Generates the allelic read percentages from VCF files
+keywords:
+  - variant calling
+  - allelic read percentages
+  - VCF
+tools:
+  - query:
+      description: |
+        Parses VCF or BCF and produces a file with the values of allelic read percentages.
+      homepage: http://samtools.github.io/bcftools/bcftools.html
+      documentation: http://www.htslib.org/doc/bcftools.html
+      doi: 10.1093/bioinformatics/btp352
+      licence: ["MIT"]
+input:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - vcf:
+      type: file
+      description: VCF input file
+      pattern: "*.{vcf}"
+
+output:
+  - meta:
+      type: map
+      description: |
+        Groovy Map containing sample information
+        e.g. [ id:'test', single_end:false ]
+  - allelic_read_pct:
+      type: file
+      description: Text output file containing the allelic read percentages
+      pattern: "*_{allelic_read_percentages.tsv}"
+  - mqc_allelic_read_pct:
+      type: file
+      description: Text output file containing the allelic read percentages with the MultiQC format
+      pattern: "*_{allelic_read_percentages_mqc.txt}"
+  - versions:
+      type: file
+      description: File containing software versions
+      pattern: "versions.yml"
+authors:
+  - "@solcos"
+maintainers:
+  - "@solcos"

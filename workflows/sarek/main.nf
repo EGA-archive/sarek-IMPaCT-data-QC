@@ -81,6 +81,9 @@ include { VCF_ANNOTATE_ALL                            } from '../../subworkflows
 // MULTIQC
 include { MULTIQC                                     } from '../../modules/nf-core/multiqc/main'
 
+// IMPACT QC
+include { IMPACT_QC                                 } from '../../impact_qc/main'
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     RUN MAIN WORKFLOW
@@ -853,6 +856,43 @@ workflow SAREK {
             versions = versions.mix(VCF_ANNOTATE_ALL.out.versions)
             reports = reports.mix(VCF_ANNOTATE_ALL.out.reports)
         }
+    }
+
+    // IMPACT QC
+    if (!(params.skip_tools && params.skip_tools.split(',').contains('impactqc'))) {
+
+        // If pipeline does not start from fastq
+        fastp_results   =  FASTP.out.json
+            ? FASTP.out.json.map{ meta, json -> [ meta, json ] }
+            : Channel.empty()
+
+        // Multiallelic variants counts metric to MultiQC report
+        bcftools_stats_results   =  VCF_QC_BCFTOOLS_VCFTOOLS.out.bcftools_stats
+            ? VCF_QC_BCFTOOLS_VCFTOOLS.out.bcftools_stats
+            : Channel.empty()
+
+        // If the pipeline does run variant calling
+        final_vcf   =  vcf_to_annotate
+            ? vcf_to_annotate
+            : Channel.empty()
+
+        // Run IMPACT QC workflow
+        IMPACT_QC(fasta,
+                  fasta_fai,
+                  dict,
+                  cram_variant_calling,
+                  intervals_for_preprocessing,
+                  final_vcf,
+                  intervals_bed_combined,
+                  reads_for_alignment,
+                  fastp_results,
+                  bcftools_stats_results)
+
+        // Gather QC reports
+        reports = reports.mix(IMPACT_QC.out.impact_qc_reports.collect{ meta, report -> report })
+
+        // Gather used softwares versions
+        versions = versions.mix(IMPACT_QC.out.versions)
     }
 
     //
