@@ -82,7 +82,12 @@ include { VCF_ANNOTATE_ALL                            } from '../../subworkflows
 include { MULTIQC                                     } from '../../modules/nf-core/multiqc/main'
 
 // IMPACT QC
+// Workflow
 include { IMPACT_QC                                 } from '../../impact_qc/main'
+
+// FASTQ_SCREEN
+params.limits_fastqc    = "${projectDir}/impact_qc/assets/limits_fastqc.txt"
+limits_fastqc           = params.limits_fastqc ? Channel.fromPath(params.limits_fastqc, checkIfExists: true).collect()     : Channel.empty()
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -179,7 +184,7 @@ workflow SAREK {
 
         // QC
         if (!(params.skip_tools && params.skip_tools.split(',').contains('fastqc'))) {
-            FASTQC(input_fastq)
+            FASTQC(input_fastq, limits_fastqc)
 
             reports = reports.mix(FASTQC.out.zip.collect{ meta, logs -> logs })
             versions = versions.mix(FASTQC.out.versions.first())
@@ -862,17 +867,17 @@ workflow SAREK {
     if (!(params.skip_tools && params.skip_tools.split(',').contains('impactqc'))) {
 
         // If pipeline does not start from fastq
-        fastp_results   =  FASTP.out.json
+        fastp_results = FASTP.out.json
             ? FASTP.out.json.map{ meta, json -> [ meta, json ] }
             : Channel.empty()
 
         // Multiallelic variants counts metric to MultiQC report
-        bcftools_stats_results   =  VCF_QC_BCFTOOLS_VCFTOOLS.out.bcftools_stats
+        bcftools_stats_results = VCF_QC_BCFTOOLS_VCFTOOLS.out.bcftools_stats
             ? VCF_QC_BCFTOOLS_VCFTOOLS.out.bcftools_stats
             : Channel.empty()
 
         // If the pipeline does run variant calling
-        final_vcf   =  vcf_to_annotate
+        final_vcf = vcf_to_annotate
             ? vcf_to_annotate
             : Channel.empty()
 

@@ -9,9 +9,9 @@ process SOMALIER {
 
     input:
     tuple val(meta), path(cram), path(crai)
-    path  fasta
-    path  fasta_fai
-    path  sites
+    tuple val(meta2), path(fasta)
+    tuple val(meta3), path(fasta_fai)
+    path sites
 
     output:
     tuple val(meta), path("*.html"), emit: html 

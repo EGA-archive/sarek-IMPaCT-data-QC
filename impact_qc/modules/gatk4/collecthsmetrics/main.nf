@@ -11,9 +11,9 @@ process COLLECTHSMETRICS {
     tuple val(meta), path(cram), path(crai)
     path bait_intervals
     path target_intervals
-    path fasta
-    path fai
-    tuple val(meta2), path(dict)
+    tuple val(meta2), path(fasta)
+    tuple val(meta3), path(fai)
+    tuple val(meta4), path(dict)
 
     output:
     tuple val(meta), path("*_metrics")  , emit: metrics

@@ -9,6 +9,7 @@ process FASTQC {
 
     input:
     tuple val(meta), path(reads)
+    path limits
 
     output:
     tuple val(meta), path("*.html"), emit: html
@@ -25,28 +26,20 @@ process FASTQC {
     def old_new_pairs = reads instanceof Path || reads.size() == 1 ? [[ reads, "${prefix}.${reads.extension}" ]] : reads.withIndex().collect { entry, index -> [ entry, "${prefix}_${index + 1}.${entry.extension}" ] }
     def rename_to = old_new_pairs*.join(' ').join(' ')
     def renamed_files = old_new_pairs.collect{ old_name, new_name -> new_name }.join(' ')
-
-    def memory_in_mb = MemoryUnit.of("${task.memory}").toUnit('MB')
-    // FastQC memory value allowed range (100 - 10000)
-    def fastqc_memory = memory_in_mb > 10000 ? 10000 : (memory_in_mb < 100 ? 100 : memory_in_mb)
-
     """
     printf "%s %s\\n" $rename_to | while read old_name new_name; do
         [ -f "\${new_name}" ] || ln -s \$old_name \$new_name
     done
 
-    # IMPaCT-QC: set K-mer metric
-    sed -i "5s:1:0:g" /usr/local/opt/fastqc-0.12.1/Configuration/limits.txt
-
     fastqc \\
         $args \\
+        --limits $limits \\
         --threads $task.cpus \\
-        --memory $fastqc_memory \\
         $renamed_files
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fastqc: \$( fastqc --version | sed '/FastQC v/!d; s/.*v//' )
+        fastqc: \$( fastqc --version | sed -e "s/FastQC v//g" )
     END_VERSIONS
     """
 
@@ -58,7 +51,7 @@ process FASTQC {
 
     cat <<-END_VERSIONS > versions.yml
     "${task.process}":
-        fastqc: \$( fastqc --version | sed '/FastQC v/!d; s/.*v//' )
+        fastqc: \$( fastqc --version | sed -e "s/FastQC v//g" )
     END_VERSIONS
     """
 }

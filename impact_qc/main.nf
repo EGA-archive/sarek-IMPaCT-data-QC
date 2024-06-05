@@ -20,12 +20,13 @@
 // Add to 'nextflow_schema.json' tools pattern: "plotallelicreadpct|plotdp|plotgq|plotsb"
 // Add to 'nextflow_schema.json' skip tools pattern: "bcftoolscustom|bcftoolsstats|collectinsertsizemetrics|collecthsmetrics|fastqscreen|fastpstats|flagstat|impactqc|sexdeterrmine|somalier|vcftoolscustom"
 
-// Add to FastQC module 'main.nf' before 'fastqc' command:
-//# Activate kmer module
-//sed -i "5s:1:0:g" /usr/local/opt/fastqc-0.12.1/Configuration/limits.txt
+// Add to FastQC module to activate kmer module
+// Add 'limits.txt' file to FASTQC module
 
 // Add sites path to 'igenomes.config' in the differents reference genomes (specify the version)
 // somalier_sites = "${projectDir}/impact_qc/assets/sites/sites.{version}.vcf.gz"
+// Add in sarek/main.nf
+//params.somalier_sites          = getGenomeAttribute('somalier_sites')
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -35,21 +36,19 @@
 
 // PICARD INTERVALS
 params.bait_intervals          = ""
-bait_intervals                 = params.bait_intervals     ? Channel.fromPath(params.bait_intervals, checkIfExists: true).collect()     : Channel.empty()
+bait_intervals                 = params.bait_intervals     ? Channel.fromPath(params.bait_intervals, checkIfExists: true).collect()             : Channel.empty()
 params.amplicon_intervals      = ""
-amplicon_intervals             = params.amplicon_intervals ? Channel.fromPath(params.amplicon_intervals, checkIfExists: true).collect() : Channel.empty()
+amplicon_intervals             = params.amplicon_intervals ? Channel.fromPath(params.amplicon_intervals, checkIfExists: true).collect()         : Channel.empty()
 params.target_intervals        = ""
-target_intervals               = params.target_intervals   ? Channel.fromPath(params.target_intervals, checkIfExists: true).collect()   : Channel.empty()
+target_intervals               = params.target_intervals   ? Channel.fromPath(params.target_intervals, checkIfExists: true).collect()           : Channel.empty()
 hsmetrics_intervals            = bait_intervals.combine(target_intervals)
  
 // SOMALIER
-params.somalier_sites          = ""
-somalier_sites                 = params.somalier_sites     ? Channel.fromPath(params.somalier_sites, checkIfExists: true).collect()     : Channel.empty()
+somalier_sites                 = params.somalier_sites     ? Channel.fromPath(params.somalier_sites, checkIfExists: true).collect()             : Channel.empty()
 
 // FASTQ_SCREEN
-params.fastq_screen_conf_db    = ""
-fastq_screen_conf_db    = "${projectDir}/impact_qc/assets/fastq_screen_conf_db/**"
-//fastq_screen_conf_db           = params.fastq_screen_conf_db ? Channel.fromPath(params.fastq_screen_conf_db, checkIfExists: true).collect()     //: Channel.empty()
+params.fastq_screen_conf_db    = "${projectDir}/impact_qc/assets/fastq_screen_conf_db/**"
+fastq_screen_conf_db           = params.fastq_screen_conf_db ? Channel.fromPath(params.fastq_screen_conf_db, checkIfExists: true).collect()     : Channel.empty()
 
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
@@ -138,11 +137,11 @@ workflow IMPACT_QC {
         }
     
 
-        // FASTQ_SCREEN       
-        //if (!(params.skip_tools && params.skip_tools.split(',').contains('fastqscreen'))) {
-        if (params.skip_tools && params.skip_tools.split(',').contains('fastqscreen')) {    
-            // If fastq_screen_conf_db does not exists
-            //fastq_screen_conf_db.ifEmpty{ println("ERROR: fastq_screen_conf_db is empty or is not found. Put fastq_screen_conf_db to the correct path or add 'fastqscreen' to the 'skip_tools'.") }
+        // FASTQ_SCREEN
+        if (!(params.skip_tools && params.skip_tools.split(',').contains('fastqscreen'))) {
+            
+            // fastq_screen_conf_db does not exists
+            fastq_screen_conf_db.ifEmpty{ println("ERROR: fastq_screen_conf_db is empty or is not found. Put fastq_screen_conf_db to the correct path or add 'fastqscreen' to the 'skip_tools'.") }
 
             if ( true ) { println "[FASTQSCREEN] INFO: FastQ_Screen needs a configuration file called 'fastq_screen.conf' provided in the folder 'impact_qc/assets/fastq_screen_db' where the user can modify the mapper in the tool and also uncomment the the databases you want to use FastQ_Screen on. Also, in the same folder, the user needs to provide the respective Bowtie indexes of the different species that want to check in order to have the database for the FastQ_Screen. The indexes must go in a separate folder with the name as indicated in the 'fastq_screen.conf' file (the second field in each database). Moreover, the last field of each database is the prefix name of the indexes, note that you can't change the path, only the name."}
     
@@ -157,8 +156,6 @@ workflow IMPACT_QC {
             versions = versions.mix(FASTQSCREEN.out.versions)
 
         }
-       
-
     } else {
         if ( true ) { println "[FASTQ metrics] WARNING: All the FASTQ metrics will not be shown since the pipeline configuration does not start from fastq files"}
     }
@@ -170,14 +167,22 @@ workflow IMPACT_QC {
         // Convert last CRAM file to BAM to used it in CollectInsertSizeMetrics
         CRAM_TO_BAM_IMPACT_QC(input, fa, fai)
         bam_impact_qc = Channel.empty()
-        bam_impact_qc = CRAM_TO_BAM_IMPACT_QC.out.cram.join(CRAM_TO_BAM_IMPACT_QC.out.crai, failOnDuplicate: true, failOnMismatch: true)
+        bam_impact_qc = CRAM_TO_BAM_IMPACT_QC.out.bam
             // Make sure correct data types are carried through
-            .map{ meta, bam, bai -> [ meta + [data_type: "bam"], bam, bai ] }
+            .map{ meta, bam -> [ meta + [data_type: "bam"], bam ] }
+        bai_impact_qc = Channel.empty()
+        bai_impact_qc = CRAM_TO_BAM_IMPACT_QC.out.bai
+            // Make sure correct data types are carried through
+            .map{ meta, bai -> [ meta + [data_type: "bai"], bai ] }
+
+
+        bam_impact_qc.view()
+
 
         versions = versions.mix(CRAM_TO_BAM_IMPACT_QC.out.versions)
           
         // RUN COLLECT INSERT SIZE METRICS
-        COLLECTINSERTSIZEMETRICS(bam_impact_qc)
+        COLLECTINSERTSIZEMETRICS(bam_impact_qc, bai_impact_qc)
 
         // Gather all reports generated
         impact_qc_reports = impact_qc_reports.mix(COLLECTINSERTSIZEMETRICS.out.metrics)
@@ -200,8 +205,8 @@ workflow IMPACT_QC {
     if (!(params.skip_tools && params.skip_tools.split(',').contains('collecthsmetrics'))) {
                     
         // Bait or target intervals do not exist
-        //bait_intervals.ifpty{ println("ERROR: Bait intervals is empty or is not found. Put the path to the correct bait intervals in 'bait_intervals' or add 'collecthsmetrics' to the 'skip_tools'.") }
-        //target_intervals.ifEmpty{ println("ERROR: Target intervals is empty or is not found. Put the path to the correct target intervals in 'target_intervals' or add 'collecthsmetrics' to the 'skip_tools'.") }
+        bait_intervals.ifEmpty{ println("ERROR: Bait intervals is empty or is not found. Put the path to the correct bait intervals in 'bait_intervals' or add 'collecthsmetrics' to the 'skip_tools'.") }
+        target_intervals.ifEmpty{ println("ERROR: Target intervals is empty or is not found. Put the path to the correct target intervals in 'target_intervals' or add 'collecthsmetrics' to the 'skip_tools'.") }
 
         if ( true ) { println "[GATK CollectHsMetrics] INFO: PICARD CollectHsMetrics needs the intervals files for --bait_intervals and --target_intervals, (One or more genomic intervals over which to operate)." }
 
@@ -261,7 +266,7 @@ workflow IMPACT_QC {
     if (!(params.skip_tools && params.skip_tools.split(',').contains('somalier'))) {
 
         // Somalier sites does not exists
-        //somalier_sites.ifEmpty{ println("ERROR: Somalier sites is empty or is not found. Put the path to the correct somalier sites in 'somalier_sites' or add 'somalier' to the 'skip_tools'.") }
+        somalier_sites.ifEmpty{ println("ERROR: Somalier sites is empty or is not found. Put the path to the correct somalier sites in 'somalier_sites' or add 'somalier' to the 'skip_tools'.") }
 
         if ( true ) { println "[SOMALIER] INFO: Somalier only accepts the correct complementary sites file as input. Somalier only works with reference genomes from the next list [GATK.GRCh37, Ensembl.GRCh37, GATK.GRCh38, NCBI.GRCh38, hg38, hg19]. Please check that the sites files correspond to the same reference genome input if needed. To specify the correct sites file you can provide one by changing any config that customises the path using or changing: params.somalier_sites / --somalier_sites. You can find the sites files in 'impact_qc/assets/sites/' directory." }
 

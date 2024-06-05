@@ -63,6 +63,8 @@ params.vep_species             = getGenomeAttribute('vep_species')
 
 aligner = params.aligner
 
+params.somalier_sites          = getGenomeAttribute('somalier_sites')
+
 /*
 ~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~~
     IMPORT FUNCTIONS / MODULES / SUBWORKFLOWS / WORKFLOWS
