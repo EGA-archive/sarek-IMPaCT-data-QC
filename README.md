@@ -14,7 +14,7 @@ To achieve this, a set of metrics related to human genomic data was decided upon
 
 Below you can find the explanation of this workflow (raw pipeline), the link to the documentation of the IMPaCT QC subworkflow and a linked documentation associated to the QC metrics added in the mentioned workflow.
 
-- [IMPaCT-data subworkflow documentation](impact_qc/README.md)
+- [IMPaCT-data subworkflow documentation](https://github.com/EGA-archive/sarek-IMPaCT-data-QC/blob/master/impact_qc/README.md)
 
 - [Metrics documentation](https://github.com/EGA-archive/sarek-IMPaCT-data-QC/blob/master/impact_qc/docs/QC_Sarek_supporing_documentation.pdf)
 
