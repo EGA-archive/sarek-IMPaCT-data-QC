@@ -16,7 +16,7 @@ Below you can find the explanation of this workflow (raw pipeline), the link to 
 
 - [IMPaCT-data subworkflow documentation](impact_qc/README.md)
 
-- [Metrics documentation](https://docs.google.com/document/d/12OWCcNKatkdJelYyiovyil-bIXDESO_K2zeIB3vncW4/edit#heading=h.cvdlfn10wodq)
+- [Metrics documentation](https://github.com/EGA-archive/sarek-IMPaCT-data-QC/blob/master/impact_qc/docs/QC_Sarek_supporing_documentation.pdf)
 
 <h1>
   <picture>
